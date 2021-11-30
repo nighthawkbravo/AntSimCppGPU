@@ -8,10 +8,15 @@
         bool ShouldBeRendered(); // This function is for determining if the object should be rendered and if not then removed all together.
 */
 #include "Point.cpp"
+#include <string>
+
+enum Color {red, blue, white, black, green, brown};
 using namespace std;
 
 class SimObject {
 public:
+    Point position;
+    Color myColor;
 
-
+    
 };

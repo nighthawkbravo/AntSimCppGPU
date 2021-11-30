@@ -3,6 +3,11 @@
 #include "device_launch_parameters.h"
 
 #include <stdio.h>
+#include "SDL.h"
+#undef main
+
+#define WIDTH 1000
+#define HEIGHT 700
 
 cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
 
@@ -14,28 +19,79 @@ __global__ void addKernel(int *c, const int *a, const int *b)
 
 int main()
 {
-    const int arraySize = 5;
-    const int a[arraySize] = { 1, 2, 3, 4, 5 };
-    const int b[arraySize] = { 10, 20, 30, 40, 50 };
-    int c[arraySize] = { 0 };
+    SDL_Event event;
+    SDL_Renderer* renderer;
+    SDL_Window* window;
+    int i = 0;
 
-    // Add vectors in parallel.
-    cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addWithCuda failed!");
-        return 1;
+    SDL_Init(SDL_INIT_VIDEO);
+    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, 0, &window, &renderer);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+
+    for (i = 0; i < WIDTH; ++i)
+        SDL_RenderDrawPoint(renderer, i, i);
+
+    SDL_RenderPresent(renderer);
+    while (1) {
+        
+        const int arraySize = 5;
+        const int a[arraySize] = { 1, 2, 3, 4, 5 };
+        const int b[arraySize] = { 10, 20, 30, 40, 50 };
+        int c[arraySize] = { 0 };
+
+        // Add vectors in parallel.
+        cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
+        if (cudaStatus != cudaSuccess) {
+            fprintf(stderr, "addWithCuda failed!");
+            return 1;
+        }
+
+        printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
+            c[0], c[1], c[2], c[3], c[4]);
+
+        // cudaDeviceReset must be called before exiting in order for profiling and
+        // tracing tools such as Nsight and Visual Profiler to show complete traces.
+        cudaStatus = cudaDeviceReset();
+        if (cudaStatus != cudaSuccess) {
+            fprintf(stderr, "cudaDeviceReset failed!");
+            return 1;
+        }
+        
+        if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
+            break;
     }
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
-    printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-        c[0], c[1], c[2], c[3], c[4]);
 
-    // cudaDeviceReset must be called before exiting in order for profiling and
-    // tracing tools such as Nsight and Visual Profiler to show complete traces.
-    cudaStatus = cudaDeviceReset();
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaDeviceReset failed!");
-        return 1;
-    }
+
+
+
+    //const int arraySize = 5;
+    //const int a[arraySize] = { 1, 2, 3, 4, 5 };
+    //const int b[arraySize] = { 10, 20, 30, 40, 50 };
+    //int c[arraySize] = { 0 };
+
+    //// Add vectors in parallel.
+    //cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
+    //if (cudaStatus != cudaSuccess) {
+    //    fprintf(stderr, "addWithCuda failed!");
+    //    return 1;
+    //}
+
+    //printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
+    //    c[0], c[1], c[2], c[3], c[4]);
+
+    //// cudaDeviceReset must be called before exiting in order for profiling and
+    //// tracing tools such as Nsight and Visual Profiler to show complete traces.
+    //cudaStatus = cudaDeviceReset();
+    //if (cudaStatus != cudaSuccess) {
+    //    fprintf(stderr, "cudaDeviceReset failed!");
+    //    return 1;
+    //}
 
     return 0;
 }

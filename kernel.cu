@@ -2,14 +2,20 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+#include "Window.h"
 #include <stdio.h>
-#include "SDL.h"
+//#include "SDL.h"
 #undef main
 
 #define WIDTH 1000
 #define HEIGHT 700
 
+// int position, lifespan, isCarryingFood (#, #, 0 or 1)
+
+
+
 cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
+//cudaError_t drawWithCuda(SDL_Renderer* r, unsigned int size);
 
 __global__ void addKernel(int *c, const int *a, const int *b)
 {
@@ -17,81 +23,46 @@ __global__ void addKernel(int *c, const int *a, const int *b)
     c[i] = a[i] + b[i];
 }
 
+__global__ void update(uint3 *a) {
+    int idx = threadIdx.x;
+
+    a[idx].x = idx;
+}
+
+void runUpdate(uint3* a, int size) {
+    
+    uint3* dev_a;
+    cudaMalloc((void**)&dev_a, size * sizeof(uint3));
+    
+    cudaMemcpy(dev_a, a, size * sizeof(uint3), cudaMemcpyHostToDevice);
+
+    update<<<1, size>>>(dev_a);
+
+    cudaMemcpy(a, dev_a, size * sizeof(uint3), cudaMemcpyDeviceToHost);
+}
+
+
 int main()
 {
-    SDL_Event event;
-    SDL_Renderer* renderer;
-    SDL_Window* window;
-    int i = 0;
+    Window window("Ant Sim", WIDTH, HEIGHT);
+    
+    int size = 100;
 
-    SDL_Init(SDL_INIT_VIDEO);
-    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, 0, &window, &renderer);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-    SDL_RenderClear(renderer);
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    uint3* host_ants = new uint3[size];
 
-    for (i = 0; i < WIDTH; ++i)
-        SDL_RenderDrawPoint(renderer, i, i);
-
-    SDL_RenderPresent(renderer);
-    while (1) {
-        
-        const int arraySize = 5;
-        const int a[arraySize] = { 1, 2, 3, 4, 5 };
-        const int b[arraySize] = { 10, 20, 30, 40, 50 };
-        int c[arraySize] = { 0 };
-
-        // Add vectors in parallel.
-        cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
-        if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "addWithCuda failed!");
-            return 1;
-        }
-
-        printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-            c[0], c[1], c[2], c[3], c[4]);
-
-        // cudaDeviceReset must be called before exiting in order for profiling and
-        // tracing tools such as Nsight and Visual Profiler to show complete traces.
-        cudaStatus = cudaDeviceReset();
-        if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "cudaDeviceReset failed!");
-            return 1;
-        }
-        
-        if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
-            break;
+    for (int i = 0; i < size; ++i) {
+        host_ants[i] = { 0,0,0 };
     }
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
 
+    runUpdate(host_ants, size);
+    
+    for (int i = 0; i < size; ++i)
+        std::cout << host_ants[i].x  << ", " << host_ants[i].y << ", " << host_ants[i].z << std::endl;
 
-
-
-
-    //const int arraySize = 5;
-    //const int a[arraySize] = { 1, 2, 3, 4, 5 };
-    //const int b[arraySize] = { 10, 20, 30, 40, 50 };
-    //int c[arraySize] = { 0 };
-
-    //// Add vectors in parallel.
-    //cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
-    //if (cudaStatus != cudaSuccess) {
-    //    fprintf(stderr, "addWithCuda failed!");
-    //    return 1;
-    //}
-
-    //printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-    //    c[0], c[1], c[2], c[3], c[4]);
-
-    //// cudaDeviceReset must be called before exiting in order for profiling and
-    //// tracing tools such as Nsight and Visual Profiler to show complete traces.
-    //cudaStatus = cudaDeviceReset();
-    //if (cudaStatus != cudaSuccess) {
-    //    fprintf(stderr, "cudaDeviceReset failed!");
-    //    return 1;
-    //}
+    while (!window.isClosed()) {
+        window.pollEvents();
+        window.clear();
+    }
 
     return 0;
 }
@@ -144,7 +115,7 @@ cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size)
     }
 
     // Launch a kernel on the GPU with one thread for each element.
-    addKernel<<<1, size>>>(dev_c, dev_a, dev_b);
+    addKernel<<< 1, size>>>(dev_c, dev_a, dev_b);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -175,3 +146,62 @@ Error:
     
     return cudaStatus;
 }
+
+//cudaError_t drawWithCuda(SDL_Renderer* r, unsigned int size)
+//{
+//    SDL_Renderer* dev_r;
+//    cudaError_t cudaStatus;
+//
+//    // Choose which GPU to run on, change this on a multi-GPU system.
+//    cudaStatus = cudaSetDevice(0);    
+//
+//    cudaStatus = cudaMalloc((void**)&dev_r, sizeof(dev_r));    
+//
+//    // Copy input vectors from host memory to GPU buffers.
+//    cudaStatus = cudaMemcpy(dev_r, r, sizeof(dev_r), cudaMemcpyHostToDevice);    
+//
+//    // Launch a kernel on the GPU with one thread for each element.
+//    drawPixel <<< 1, size >> > (r);
+//
+//    // Check for any errors launching the kernel
+//    cudaStatus = cudaGetLastError();    
+//
+//    // cudaDeviceSynchronize waits for the kernel to finish, and returns
+//    // any errors encountered during the launch.
+//    cudaStatus = cudaDeviceSynchronize();    
+//
+//    // Copy output vector from GPU buffer to host memory.
+//    cudaStatus = cudaMemcpy(r, dev_r, sizeof(dev_r), cudaMemcpyDeviceToHost);    
+//
+//Error:
+//    cudaFree(dev_r);
+//
+//    return cudaStatus;
+//}
+
+
+//cudaError_t cudaStatus = drawWithCuda(renderer,50);
+
+
+/*const int arraySize = 5;
+        const int a[arraySize] = { 1, 2, 3, 4, 5 };
+        const int b[arraySize] = { 10, 20, 30, 40, 50 };
+        int c[arraySize] = { 0 };*/
+
+        // Add vectors in parallel.
+        /*cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
+        if (cudaStatus != cudaSuccess) {
+            fprintf(stderr, "addWithCuda failed!");
+            return 1;
+        }*/
+
+        /*printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
+            c[0], c[1], c[2], c[3], c[4]);*/
+
+            // cudaDeviceReset must be called before exiting in order for profiling and
+            // tracing tools such as Nsight and Visual Profiler to show complete traces.
+            /*cudaStatus = cudaDeviceReset();
+            if (cudaStatus != cudaSuccess) {
+                fprintf(stderr, "cudaDeviceReset failed!");
+                return 1;
+            }*/

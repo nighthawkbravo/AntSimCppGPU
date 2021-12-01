@@ -6,6 +6,8 @@ class Point
 private:
     int x, y;
 public:
+    Point() { x = 0; y = 0; }
+
     Point(int x1, int y1) { x = x1; y = y1; }
 
     // Copy constructor
@@ -19,4 +21,7 @@ public:
 
     int getX() { return x; }
     int getY() { return y; }
+
+    void setX(int X) { x = X; }
+    void setY(int Y) { y = Y; }
 };

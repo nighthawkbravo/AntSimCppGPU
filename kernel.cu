@@ -20,13 +20,7 @@
 int id = 0;
 
 __global__ void update(Ant* a);
-
-cudaError_t updateAnts(Colony c);
-
-__global__ void update2(Ant* a);
-
-void updateAnts2(Colony *c);
-
+cudaError_t updateAnts(Colony *c);
 
 
 int main()
@@ -37,7 +31,7 @@ int main()
     c.printInfo();
     c.printAnts();
 
-    updateAnts2(&c);
+    updateAnts(&c);
 
     c.printAnts();
     
@@ -50,68 +44,20 @@ int main()
 }
 
 
-
 __global__ void update(Ant* a) {
     int idx = threadIdx.x;
 
-    //Point oldp = a[idx].getPos();
-    //a[idx].setPos(Point(1, 1));
-
-    //Point oldp = a[idx].getPos();
-    //int x = 1; // -1, 0, 1
-    //int y = 1;
-
-    //a[idx].setPos(Point(oldp.getX() + x, oldp.getY()+ y));
-}
-
-__global__ void update2(Ant* a) {
-    int idx = threadIdx.x;
-
     Point oldp = a[idx].getPos();
-    
-    
 
     a[idx].setPos(Point(oldp.getX() + 1, oldp.getY()+ 1));
 }
 
 
-void updateAnts2(Colony *c) {
+cudaError_t updateAnts(Colony *c) {
 
     int size = c->getAntCount();
 
-    std::cout << "BEFORE" << std::endl;
-
-    Ant* dev_a;
-    cudaMalloc((void**)&dev_a, size * sizeof(Ant));    
-    cudaMemcpy(dev_a, c->ants, size * sizeof(Ant), cudaMemcpyHostToDevice);
-
-    update2<<<1, size >>>(dev_a);
-
-    cudaGetLastError();    
-    cudaDeviceSynchronize();    
-    cudaMemcpy(c->ants, dev_a, size * sizeof(Ant), cudaMemcpyDeviceToHost);
-
-    
-
-    cudaFree(dev_a);
-}
-
-
-
-cudaError_t updateAnts(Colony c) {
-
-    int size = c.getAntCount();
-    Ant* host_a = c.ants;
-
-    /*std::cout << "PRINT1" << std::endl;
-
-    for (int i = 0; i < size; ++i) {
-        std::cout << host_a[i].getPos().toString() << std::endl;
-    }
-
-    std::cout << "PRINT1" << std::endl;*/
-
-    Ant* dev_a = nullptr;
+    Ant* dev_ants;
     cudaError_t cudaStatus;
 
     // Choose which GPU to run on, change this on a multi-GPU system.
@@ -122,20 +68,20 @@ cudaError_t updateAnts(Colony c) {
     }
 
     // Allocate GPU buffers for the ants vector
-    cudaStatus = cudaMalloc((void**)&dev_a, size * sizeof(Ant));
+    cudaStatus = cudaMalloc((void**)&dev_ants, size * sizeof(Ant));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed!");
         goto Error;
     }
 
     // Copy input vector from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_a, host_a, size * sizeof(Ant), cudaMemcpyHostToDevice);
+    cudaStatus = cudaMemcpy(dev_ants, c->ants, size * sizeof(Ant), cudaMemcpyHostToDevice);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy to, failed!");
         goto Error;
     }
 
-    update<<<1, size>>>(dev_a);
+    update<<<1, size>>>(dev_ants);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -153,21 +99,14 @@ cudaError_t updateAnts(Colony c) {
     }
 
     // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(host_a, dev_a, size * sizeof(Ant), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(c->ants, dev_ants, size * sizeof(Ant), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy back, failed!");
         goto Error;
     }
 
-    /*std::cout << "PRINT" << std::endl;
-
-    for (int i = 0; i < size; ++i) {
-        std::cout << host_a[i].getPos().toString() << std::endl;
-    }
-
-    std::cout << "PRINT" << std::endl;*/
 Error:
-    cudaFree(dev_a);
+    cudaFree(dev_ants);
 
     return cudaStatus;
 }

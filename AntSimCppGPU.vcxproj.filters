@@ -4,13 +4,45 @@
     <CudaCompile Include="kernel.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Point.cpp" />
-    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="Ant.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Point.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+    <ClCompile Include="Colony.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Window.h" />
+    <ClInclude Include="Ant.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Point.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="direction.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Colony.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header files">
+      <UniqueIdentifier>{39c7f225-ca90-462c-bed9-239df499c9ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source files">
+      <UniqueIdentifier>{b76383a4-d911-4fd1-84cf-642d87d761e8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

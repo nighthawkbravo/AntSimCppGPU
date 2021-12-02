@@ -2,6 +2,8 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+#include "Colony.h"
+#include <vector>
 #include "Window.h"
 #include <stdio.h>
 //#include "SDL.h"
@@ -10,12 +12,129 @@
 #define WIDTH 1000
 #define HEIGHT 700
 
-// int position, lifespan, isCarryingFood (#, #, 0 or 1)
+// ---------------------------------------------------------
+
+int id = 0;
+
+__global__ void update(Ant* a);
+
+cudaError_t updateAnts(Ant* host_a, int size);
 
 
 
-cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
-//cudaError_t drawWithCuda(SDL_Renderer* r, unsigned int size);
+
+
+int main()
+{
+    Window window("Ant Sim", WIDTH, HEIGHT);
+    Ant* a;
+    
+    Colony c(Point(WIDTH/2+1, HEIGHT/2+1), 10, ++id);
+
+    c.printInfo();
+    c.printAnts();
+
+    c.addAnts(2);
+
+    c.printInfo();
+    c.printAnts();
+
+    while (!window.isClosed()) {
+        window.pollEvents();
+        window.clear();
+    }
+
+    return 0;
+}
+
+
+
+__global__ void update(Ant* a) {
+
+}
+
+
+cudaError_t updateAnts(Colony c) {
+
+    int size = c.getAntCount();
+    Ant* host_a = nullptr;
+
+    Ant* dev_a = nullptr;
+    cudaError_t cudaStatus;
+
+    // Choose which GPU to run on, change this on a multi-GPU system.
+    cudaStatus = cudaSetDevice(0);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+        goto Error;
+    }
+
+    // Allocate GPU buffers for the ants vector
+    cudaStatus = cudaMalloc((void**)&dev_a, size * sizeof(Ant));
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaMalloc failed!");
+        goto Error;
+    }
+
+    // Copy input vector from host memory to GPU buffers.
+    cudaStatus = cudaMemcpy(dev_a, host_a, size * sizeof(Ant), cudaMemcpyHostToDevice);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaMemcpy to, failed!");
+        goto Error;
+    }
+
+    update << <1, size >> > (dev_a);
+
+    // Check for any errors launching the kernel
+    cudaStatus = cudaGetLastError();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+        goto Error;
+    }
+
+    // cudaDeviceSynchronize waits for the kernel to finish, and returns
+    // any errors encountered during the launch.
+    cudaStatus = cudaDeviceSynchronize();
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching addKernel!\n", cudaStatus);
+        goto Error;
+    }
+
+    // Copy output vector from GPU buffer to host memory.
+    cudaStatus = cudaMemcpy(host_a, dev_a, size * sizeof(Ant), cudaMemcpyDeviceToHost);
+    if (cudaStatus != cudaSuccess) {
+        fprintf(stderr, "cudaMemcpy back, failed!");
+        goto Error;
+    }
+
+Error:
+    cudaFree(dev_a);
+
+    return cudaStatus;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+
+
 
 __global__ void addKernel(int *c, const int *a, const int *b)
 {
@@ -29,11 +148,17 @@ __global__ void update(uint3 *a) {
     a[idx].x = idx;
 }
 
+__global__ void update2(Point* a) {
+    int idx = threadIdx.x;
+
+    a[idx].setX(idx);
+}
+
 void runUpdate(uint3* a, int size) {
-    
+
     uint3* dev_a;
     cudaMalloc((void**)&dev_a, size * sizeof(uint3));
-    
+
     cudaMemcpy(dev_a, a, size * sizeof(uint3), cudaMemcpyHostToDevice);
 
     update<<<1, size>>>(dev_a);
@@ -41,38 +166,24 @@ void runUpdate(uint3* a, int size) {
     cudaMemcpy(a, dev_a, size * sizeof(uint3), cudaMemcpyDeviceToHost);
 }
 
+void runUpdate2(Point* a, int size) {
 
-int main()
-{
-    Window window("Ant Sim", WIDTH, HEIGHT);
-    
-    int size = 100;
+    Point* dev_a;
+    cudaMalloc((void**)&dev_a, size * sizeof(Point));
 
-    uint3* host_ants = new uint3[size];
+    cudaMemcpy(dev_a, a, size * sizeof(Point), cudaMemcpyHostToDevice);
 
-    for (int i = 0; i < size; ++i) {
-        host_ants[i] = { 0,0,0 };
-    }
+    update2<<<1, size >>> (dev_a);
 
-    runUpdate(host_ants, size);
-    
-    for (int i = 0; i < size; ++i)
-        std::cout << host_ants[i].x  << ", " << host_ants[i].y << ", " << host_ants[i].z << std::endl;
-
-    while (!window.isClosed()) {
-        window.pollEvents();
-        window.clear();
-    }
-
-    return 0;
+    cudaMemcpy(a, dev_a, size * sizeof(Point), cudaMemcpyDeviceToHost);
 }
 
 // Helper function for using CUDA to add vectors in parallel.
-cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size)
+cudaError_t addWithCuda(int* c, const int* a, const int* b, unsigned int size)
 {
-    int *dev_a = 0;
-    int *dev_b = 0;
-    int *dev_c = 0;
+    int* dev_a = 0;
+    int* dev_b = 0;
+    int* dev_c = 0;
     cudaError_t cudaStatus;
 
     // Choose which GPU to run on, change this on a multi-GPU system.
@@ -115,7 +226,7 @@ cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size)
     }
 
     // Launch a kernel on the GPU with one thread for each element.
-    addKernel<<< 1, size>>>(dev_c, dev_a, dev_b);
+    addKernel << < 1, size >> > (dev_c, dev_a, dev_b);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -123,7 +234,7 @@ cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size)
         fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
         goto Error;
     }
-    
+
     // cudaDeviceSynchronize waits for the kernel to finish, and returns
     // any errors encountered during the launch.
     cudaStatus = cudaDeviceSynchronize();
@@ -143,65 +254,8 @@ Error:
     cudaFree(dev_c);
     cudaFree(dev_a);
     cudaFree(dev_b);
-    
+
     return cudaStatus;
 }
 
-//cudaError_t drawWithCuda(SDL_Renderer* r, unsigned int size)
-//{
-//    SDL_Renderer* dev_r;
-//    cudaError_t cudaStatus;
-//
-//    // Choose which GPU to run on, change this on a multi-GPU system.
-//    cudaStatus = cudaSetDevice(0);    
-//
-//    cudaStatus = cudaMalloc((void**)&dev_r, sizeof(dev_r));    
-//
-//    // Copy input vectors from host memory to GPU buffers.
-//    cudaStatus = cudaMemcpy(dev_r, r, sizeof(dev_r), cudaMemcpyHostToDevice);    
-//
-//    // Launch a kernel on the GPU with one thread for each element.
-//    drawPixel <<< 1, size >> > (r);
-//
-//    // Check for any errors launching the kernel
-//    cudaStatus = cudaGetLastError();    
-//
-//    // cudaDeviceSynchronize waits for the kernel to finish, and returns
-//    // any errors encountered during the launch.
-//    cudaStatus = cudaDeviceSynchronize();    
-//
-//    // Copy output vector from GPU buffer to host memory.
-//    cudaStatus = cudaMemcpy(r, dev_r, sizeof(dev_r), cudaMemcpyDeviceToHost);    
-//
-//Error:
-//    cudaFree(dev_r);
-//
-//    return cudaStatus;
-//}
-
-
-//cudaError_t cudaStatus = drawWithCuda(renderer,50);
-
-
-/*const int arraySize = 5;
-        const int a[arraySize] = { 1, 2, 3, 4, 5 };
-        const int b[arraySize] = { 10, 20, 30, 40, 50 };
-        int c[arraySize] = { 0 };*/
-
-        // Add vectors in parallel.
-        /*cudaError_t cudaStatus = addWithCuda(c, a, b, arraySize);
-        if (cudaStatus != cudaSuccess) {
-            fprintf(stderr, "addWithCuda failed!");
-            return 1;
-        }*/
-
-        /*printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-            c[0], c[1], c[2], c[3], c[4]);*/
-
-            // cudaDeviceReset must be called before exiting in order for profiling and
-            // tracing tools such as Nsight and Visual Profiler to show complete traces.
-            /*cudaStatus = cudaDeviceReset();
-            if (cudaStatus != cudaSuccess) {
-                fprintf(stderr, "cudaDeviceReset failed!");
-                return 1;
-            }*/
+*/

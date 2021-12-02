@@ -80,6 +80,8 @@
     <CudaCompile Include="kernel.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Ant.cpp" />
+    <ClCompile Include="Colony.cpp" />
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -87,6 +89,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Ant.h" />
+    <ClInclude Include="Colony.h" />
+    <ClInclude Include="direction.h" />
+    <ClInclude Include="Point.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

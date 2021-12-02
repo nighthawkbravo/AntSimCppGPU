@@ -3,7 +3,6 @@
 #include <string>
 #include <SDL.h>
 #include <vector>
-#include "Point.h"
 
 class Window {
 public:
@@ -29,8 +28,10 @@ private:
 	
 	bool obstaclePlacing = false;
 
-	Point p1;
-	Point p2;
+	int p1x;
+	int p1y;
+	int p2x;
+	int p2y;
 	int mouseClickCount = 0;
 
 	std::vector<SDL_Rect*> obstacles;

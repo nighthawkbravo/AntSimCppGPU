@@ -103,8 +103,7 @@ void Window::pollEvents() {
 				break;
 			case SDL_MOUSEMOTION:
 				if (mouseClickCount == 1) {
-					//std::cout << event.motion.x << ", " << event.motion.y << std::endl;
-					p2.setX(event.motion.x); p2.setY(event.motion.y);
+					p2x = event.motion.x; p2y = event.motion.y;
 				}				
 				break;
 			case SDL_MOUSEBUTTONDOWN:
@@ -112,13 +111,13 @@ void Window::pollEvents() {
 				if (mouseClickCount == 0) {
 					mouseClickCount++;
 					
-					p1.setX(x); p1.setY(y);
-					std::cout << p1.getX() << ", " << p1.getY() << std::endl;
+					p1x = x; p1y = y;
+					std::cout << p1x << ", " << p1y << std::endl;
 				}
 				else if (mouseClickCount == 1) {
 					mouseClickCount = 0;
-					p2.setX(x); p2.setY(y);
-					std::cout << p2.getX() << ", " << p2.getY() << std::endl;
+					p2x = x; p2y = y;
+					std::cout << p2x << ", " << p2y << std::endl;
 					createRectangle(1);
 					obstaclePlacing = false;
 				}
@@ -136,34 +135,29 @@ void Window::createRectangle(int c) {
 	int xUL = 0, yUL = 0;
 	int w = 0, h = 0;
 
-	int p1X = p1.getX();
-	int p1Y = p1.getY();
-	int p2X = p2.getX();
-	int p2Y = p2.getY();
-
-	if (p1X < p2X && p1Y < p2Y) {
-		xUL = p1X;
-		yUL = p1Y;
-		w = p2X - p1X;
-		h = p2Y - p1Y;
+	if (p1x < p2x && p1y < p2y) {
+		xUL = p1x;
+		yUL = p1y;
+		w = p2x - p1x;
+		h = p2y - p1y;
 	}
-	else if (p2X < p1X && p2Y < p1Y) {
-		xUL = p2X;
-		yUL = p2Y;
-		w = p1X - p2X;
-		h = p1Y - p2Y;
+	else if (p2x < p1x && p2y < p1y) {
+		xUL = p2x;
+		yUL = p2y;
+		w = p1x - p2x;
+		h = p1y - p2y;
 	}
-	else if (p1X < p2X && p1Y > p2Y) {
-		xUL = p1X;
-		yUL = p2Y;
-		w = p2X - p1X;
-		h = p1Y - p2Y;
+	else if (p1x < p2x && p1y > p2y) {
+		xUL = p1x;
+		yUL = p2y;
+		w = p2x - p1x;
+		h = p1y - p2y;
 	}
 	else { //(p1X > p2X && p2Y > p1Y) {
-		xUL = p2X;
-		yUL = p1Y;
-		w = p1X - p2X;
-		h = p2Y - p1Y;
+		xUL = p2x;
+		yUL = p1y;
+		w = p1x - p2x;
+		h = p2y - p1y;
 	}
 	
 	switch (c) {

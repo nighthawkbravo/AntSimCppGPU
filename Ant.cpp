@@ -1,26 +1,25 @@
 #include "Ant.h"
 
-__host__ __device__ Ant::Ant() {
-	pos = Point(0, 0);
+Ant::Ant() {
+	posX = 0;
+	posY = 0;
 	dir = int2dir(rand() % 8); // 0 - 7
 	lifeSpan = (rand() % 200 + 1) * 40; // 40 - 8000 ticks
 }
 
-__host__ __device__ Ant::Ant(Point p) {
-	pos = p;
-	colPos = p;
+Ant::Ant(int x, int y) {
+	posX = x;
+	posY = y;
+	colPosX = x;
+	colPosY = y;
 	dir = int2dir(rand() % 8); // 0 - 7
 	lifeSpan = (rand() % 200 + 1) * 40; // 40 - 8000 ticks
 }
 
-void Ant::setColPos(Point p) {
-	colPos = p;
+void Ant::setColPos(int x, int y) {
+	colPosX = x;
+	colPosY = y;
 }
-
-__host__ __device__ void Ant::setPos(Point p) {
-	pos = p;
-}
-
 
 __host__ __device__ direction Ant::int2dir(int i) {
 	int a = i % 8;

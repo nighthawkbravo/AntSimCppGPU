@@ -7,9 +7,6 @@
     <ClCompile Include="Ant.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
-    <ClCompile Include="Point.cpp">
-      <Filter>Source files</Filter>
-    </ClCompile>
     <ClCompile Include="Window.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
@@ -22,9 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ant.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="Point.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="Window.h">

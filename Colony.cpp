@@ -1,14 +1,15 @@
 #include "Colony.h"
 
-Colony::Colony(Point p, int ac, int id) {
+Colony::Colony(int x, int y, int ac, int id) {
 	antCount = ac;
-	startingPos = p;
+	posX = x;
+	posY = y;
 	ants = new Ant[ac]; // "Actually in this form you cannot invoke constructor which takes parameter(s). It is not allowed by the language specification. - https://stackoverflow.com/questions/8462895/how-to-dynamically-declare-an-array-of-objects-with-a-constructor-in-c"
 	myId = id;
 
 	for (int i = 0; i < antCount; ++i) {
-		ants[i].setPos(p);
-		ants[i].setColPos(p);
+		ants[i].setPos(posX, posY);
+		ants[i].setColPos(posX, posY);
 	}
 }
 
@@ -26,8 +27,8 @@ void Colony::addAnts(int n) {
 		}
 
 		for (int i = antCount-1; i < newsize; ++i) {
-			newAnts[i].setPos(startingPos);
-			newAnts[i].setColPos(startingPos);
+			ants[i].setPos(posX, posY);
+			ants[i].setColPos(posX, posY);
 		}
 
 		antCount = newsize;
@@ -44,14 +45,14 @@ void Colony::setAnts(Ant* a) {
 void Colony::printInfo() {
 	std::cout << "Colony Id: " << myId
 		<< " - Antcount: " << antCount
-		<< " - Position: (" << startingPos.getX() << ", " << startingPos.getY() << ")\n";
+		<< " - Position: (" << posX << ", " << posY << ")\n";
 }
 
 void Colony::printAnts() {
 	for (int i = 0; i < antCount; ++i) {
 		std::cout << "LifeSpan: " << ants[i].getLifeSpan() << " - "
 			<< "Carry: " << ants[i].getLuggage() << " - "
-			<< "Position: " << ants[i].getPos().toString() << " - "
+			<< "Position: " << ants[i].getPos() << " - "
 			<< "Direction: " << dir2string::D2S(ants[i].getdir()) << std::endl;
 	}
 }

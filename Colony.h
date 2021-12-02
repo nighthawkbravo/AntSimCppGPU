@@ -1,12 +1,11 @@
 #pragma once
 
 #include <iostream>
-#include "Point.h"
 #include "Ant.h"
 
 class Colony {
 public:
-	Colony(Point p, int ac, int id);
+	Colony(int x, int y, int ac, int id);
 	~Colony();
 
 	void printInfo();
@@ -16,7 +15,8 @@ public:
 	void setAnts(Ant* a);
 
 	inline int getAntCount() { return antCount; }
-	inline Point getPos() { return startingPos; }
+	inline int getPosX() { return posX; }
+	inline int getPosY() { return posY; }
 	inline int getId() { return myId; }
 
 	Ant* ants;
@@ -28,6 +28,7 @@ private:
 
 	int myId;
 	int antCount;
-	Point startingPos;
+	int posX;
+	int posY;
 
 };

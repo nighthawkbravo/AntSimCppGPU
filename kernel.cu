@@ -32,7 +32,7 @@ void updateAnts2(Colony *c);
 int main()
 {
     Window window("Ant Sim", WIDTH, HEIGHT);
-    Colony c(Point(WIDTH / 2 + 1, HEIGHT / 2 + 1), 10, ++id);
+    Colony c(WIDTH / 2 + 1, HEIGHT / 2 + 1, 10, ++id);
     
     c.printInfo();
     c.printAnts();
@@ -67,15 +67,11 @@ __global__ void update(Ant* a) {
 __global__ void update2(Ant* a) {
     int idx = threadIdx.x;
 
-    Point oldp = a[idx].getPos();
-    
+    int x = a[idx].getPosX();
+    int y = a[idx].getPosY();
+
+    a[idx].setPos(x+1, y+1);
     a[idx].setFood();
-
-    //Point oldp = a[idx].getPos();
-    //int x = 1; // -1, 0, 1
-    //int y = 1;
-
-    //a[idx].setPos(Point(oldp.getX() + 1, oldp.getY()+ 1));
 }
 
 

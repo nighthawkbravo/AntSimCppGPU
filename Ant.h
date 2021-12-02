@@ -11,7 +11,9 @@ public:
 	Ant(Point p);
 
 	void setColPos(Point p);
-	__host__ __device__ void setPos(Point p);
+	__host__ __device__ inline void setPos(Point p) {
+		pos = p;
+	}
 	__host__ __device__ inline void setFood() {
 		CarryingFood = true;
 	}

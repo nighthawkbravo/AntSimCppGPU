@@ -17,11 +17,6 @@ void Ant::setColPos(Point p) {
 	colPos = p;
 }
 
-__host__ __device__ void Ant::setPos(Point p) {
-	pos = p;
-}
-
-
 __host__ __device__ direction Ant::int2dir(int i) {
 	int a = i % 8;
 

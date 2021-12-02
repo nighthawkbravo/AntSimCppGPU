@@ -69,13 +69,9 @@ __global__ void update2(Ant* a) {
 
     Point oldp = a[idx].getPos();
     
-    a[idx].setFood();
+    
 
-    //Point oldp = a[idx].getPos();
-    //int x = 1; // -1, 0, 1
-    //int y = 1;
-
-    //a[idx].setPos(Point(oldp.getX() + 1, oldp.getY()+ 1));
+    a[idx].setPos(Point(oldp.getX() + 1, oldp.getY()+ 1));
 }
 
 

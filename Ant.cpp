@@ -1,12 +1,12 @@
 #include "Ant.h"
 
-Ant::Ant() {
+__host__ __device__ Ant::Ant() {
 	pos = Point(0, 0);
 	dir = int2dir(rand() % 8); // 0 - 7
 	lifeSpan = (rand() % 200 + 1) * 40; // 40 - 8000 ticks
 }
 
-Ant::Ant(Point p) {
+__host__ __device__ Ant::Ant(Point p) {
 	pos = p;
 	colPos = p;
 	dir = int2dir(rand() % 8); // 0 - 7

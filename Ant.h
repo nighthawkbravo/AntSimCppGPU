@@ -12,6 +12,9 @@ public:
 
 	void setColPos(Point p);
 	__host__ __device__ void setPos(Point p);
+	__host__ __device__ inline void setFood() {
+		CarryingFood = true;
+	}
 
 	__host__ __device__ inline direction getdir() { return dir; }
 	__host__ __device__ inline bool getLuggage() { return CarryingFood; }

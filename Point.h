@@ -9,12 +9,12 @@ class Point
 private:
     int x, y;
 public:
-    Point() { x = 0; y = 0; }
+    __host__ __device__ Point() { x = 0; y = 0; }
 
-    Point(int x1, int y1) { x = x1; y = y1; }
+    __host__ __device__ Point(int x1, int y1) { x = x1; y = y1; }
 
     // Copy constructor
-    Point(const Point& p1) { x = p1.x; y = p1.y; }
+    __host__ __device__ Point(const Point& p1) { x = p1.x; y = p1.y; }
 
     void print();
 

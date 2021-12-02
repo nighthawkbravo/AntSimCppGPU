@@ -2,6 +2,9 @@
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
+#include <algorithm>
+#include <iterator>
+
 #include "Colony.h"
 #include <vector>
 #include "Window.h"
@@ -18,27 +21,26 @@ int id = 0;
 
 __global__ void update(Ant* a);
 
-cudaError_t updateAnts(Ant* host_a, int size);
+cudaError_t updateAnts(Colony c);
 
+__global__ void update2(Ant* a);
 
+void updateAnts2(Colony *c);
 
 
 
 int main()
 {
     Window window("Ant Sim", WIDTH, HEIGHT);
-    Ant* a;
+    Colony c(Point(WIDTH / 2 + 1, HEIGHT / 2 + 1), 10, ++id);
     
-    Colony c(Point(WIDTH/2+1, HEIGHT/2+1), 10, ++id);
-
     c.printInfo();
     c.printAnts();
 
-    c.addAnts(2);
+    updateAnts2(&c);
 
-    c.printInfo();
     c.printAnts();
-
+    
     while (!window.isClosed()) {
         window.pollEvents();
         window.clear();
@@ -50,14 +52,68 @@ int main()
 
 
 __global__ void update(Ant* a) {
+    int idx = threadIdx.x;
 
+    //Point oldp = a[idx].getPos();
+    //a[idx].setPos(Point(1, 1));
+
+    //Point oldp = a[idx].getPos();
+    //int x = 1; // -1, 0, 1
+    //int y = 1;
+
+    //a[idx].setPos(Point(oldp.getX() + x, oldp.getY()+ y));
 }
+
+__global__ void update2(Ant* a) {
+    int idx = threadIdx.x;
+
+    Point oldp = a[idx].getPos();
+    
+    a[idx].setFood();
+
+    //Point oldp = a[idx].getPos();
+    //int x = 1; // -1, 0, 1
+    //int y = 1;
+
+    //a[idx].setPos(Point(oldp.getX() + 1, oldp.getY()+ 1));
+}
+
+
+void updateAnts2(Colony *c) {
+
+    int size = c->getAntCount();
+
+    std::cout << "BEFORE" << std::endl;
+
+    Ant* dev_a;
+    cudaMalloc((void**)&dev_a, size * sizeof(Ant));    
+    cudaMemcpy(dev_a, c->ants, size * sizeof(Ant), cudaMemcpyHostToDevice);
+
+    update2<<<1, size >>>(dev_a);
+
+    cudaGetLastError();    
+    cudaDeviceSynchronize();    
+    cudaMemcpy(c->ants, dev_a, size * sizeof(Ant), cudaMemcpyDeviceToHost);
+
+    
+
+    cudaFree(dev_a);
+}
+
 
 
 cudaError_t updateAnts(Colony c) {
 
     int size = c.getAntCount();
-    Ant* host_a = nullptr;
+    Ant* host_a = c.ants;
+
+    /*std::cout << "PRINT1" << std::endl;
+
+    for (int i = 0; i < size; ++i) {
+        std::cout << host_a[i].getPos().toString() << std::endl;
+    }
+
+    std::cout << "PRINT1" << std::endl;*/
 
     Ant* dev_a = nullptr;
     cudaError_t cudaStatus;
@@ -83,7 +139,7 @@ cudaError_t updateAnts(Colony c) {
         goto Error;
     }
 
-    update << <1, size >> > (dev_a);
+    update<<<1, size>>>(dev_a);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -107,6 +163,13 @@ cudaError_t updateAnts(Colony c) {
         goto Error;
     }
 
+    /*std::cout << "PRINT" << std::endl;
+
+    for (int i = 0; i < size; ++i) {
+        std::cout << host_a[i].getPos().toString() << std::endl;
+    }
+
+    std::cout << "PRINT" << std::endl;*/
 Error:
     cudaFree(dev_a);
 

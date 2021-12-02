@@ -13,11 +13,13 @@ public:
 	void printAnts();
 
 	void addAnts(int n);
+	void setAnts(Ant* a);
 
 	inline int getAntCount() { return antCount; }
 	inline Point getPos() { return startingPos; }
-	inline Ant* getAnts() { return ants; }
 	inline int getId() { return myId; }
+
+	Ant* ants;
 
 private:
 
@@ -26,7 +28,6 @@ private:
 
 	int myId;
 	int antCount;
-	Ant* ants;
 	Point startingPos;
 
 };

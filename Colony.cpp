@@ -37,6 +37,10 @@ void Colony::addAnts(int n) {
 	}
 }
 
+void Colony::setAnts(Ant* a) {
+	ants = a;
+}
+
 void Colony::printInfo() {
 	std::cout << "Colony Id: " << myId
 		<< " - Antcount: " << antCount

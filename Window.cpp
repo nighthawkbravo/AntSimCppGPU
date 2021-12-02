@@ -103,7 +103,6 @@ void Window::pollEvents() {
 				break;
 			case SDL_MOUSEMOTION:
 				if (mouseClickCount == 1) {
-					//std::cout << event.motion.x << ", " << event.motion.y << std::endl;
 					p2.setX(event.motion.x); p2.setY(event.motion.y);
 				}				
 				break;
@@ -112,13 +111,11 @@ void Window::pollEvents() {
 				if (mouseClickCount == 0) {
 					mouseClickCount++;
 					
-					p1.setX(x); p1.setY(y);
-					std::cout << p1.getX() << ", " << p1.getY() << std::endl;
+					p1.setX(x); p1.setY(y);					
 				}
 				else if (mouseClickCount == 1) {
 					mouseClickCount = 0;
 					p2.setX(x); p2.setY(y);
-					std::cout << p2.getX() << ", " << p2.getY() << std::endl;
 					createRectangle(1);
 					obstaclePlacing = false;
 				}

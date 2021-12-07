@@ -17,6 +17,8 @@ public:
 
 	std::vector<Point*> ants;
 
+	void cleanAnts();
+
 private: 
 	bool init();
 	void createRectangle(int c);

@@ -18,6 +18,11 @@ Window::~Window()
 		delete r;
 	}
 	obstacles.clear();
+	for (auto a : ants)
+	{
+		delete a;
+	}
+	ants.clear();
 }
 
 bool Window::init()
@@ -200,4 +205,12 @@ void Window::clear() const {
 	}
 
 	SDL_RenderPresent(renderer);
+}
+
+void Window::cleanAnts() {
+	for (auto a : ants)
+	{
+		delete a;
+	}
+	ants.clear();
 }

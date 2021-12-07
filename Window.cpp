@@ -185,5 +185,19 @@ void Window::clear() const {
 		}
 	}
 
+	if (ants.size() > 0) {
+		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+		for (auto i = ants.begin(); i < ants.end(); ++i) {
+			int x = (*i)->getX();
+			int y = (*i)->getY();
+
+			SDL_RenderDrawPoint(renderer, x, y);
+			if(validX(x+1) && validY(y)) SDL_RenderDrawPoint(renderer, x+1, y);
+			if(validX(x-1) && validY(y)) SDL_RenderDrawPoint(renderer, x-1, y);
+			if (validX(x) && validY(y - 1)) SDL_RenderDrawPoint(renderer, x, y - 1);
+			if (validX(x) && validY(y + 1)) SDL_RenderDrawPoint(renderer, x, y + 1);
+		}
+	}
+
 	SDL_RenderPresent(renderer);
 }

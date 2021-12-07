@@ -21,39 +21,35 @@
 // ---------------------------------------------------------
 
 int id = 0;
+Window* win;
 
 __device__ int generate(curandState* globalState, int ind);
+__device__ int clampX(int x);
+__device__ int clampX(int y);
 __global__ void setup_kernel(curandState* state, unsigned long seed);
 __global__ void update(Ant* a, curandState* globalState, int w, int h);
-cudaError_t updateAnts(Colony *c);
+cudaError_t updateAnts(Colony *c, Window* w);
 
 
 int main()
 {
-    Window window("Ant Sim", WIDTH, HEIGHT);
-    Colony c(Point(WIDTH / 2 + 1, HEIGHT / 2 + 1), 10, ++id);
+    win = new Window("Ant Sim", WIDTH, HEIGHT);
+    Colony c(Point(WIDTH / 2 + 1, HEIGHT / 2 + 1), 1000, ++id);
     
     c.printInfo();
-    c.printAnts();
 
-    //updateAnts(&c);
-    //std::cout << "\n------\n\n";
-    //c.printAnts();
-
-    for (int i = 0; i < 10; ++i) {
-        updateAnts(&c);
-        c.printAnts();
-        std::cout << std::endl;
+    while (!win->isClosed()) {
+        win->pollEvents();
+        updateAnts(&c, win);
+        //c.printAnts();
+        win->clear();
     }
-
-    /*while (!window.isClosed()) {
-        window.pollEvents();
-        window.clear();
-    }*/
 
     return 0;
 }
 
+
+// --------------- Ant Cuda ---------------
 
 __device__ int generate(curandState* globalState, int ind)
 {
@@ -64,31 +60,40 @@ __device__ int generate(curandState* globalState, int ind)
     globalState[ind] = localState;
     return RANDOM;
 }
-
+__device__ int clampX(int x) {
+    if (x < 0) return 0;
+    if (x > WIDTH) return WIDTH;
+    return x;
+}
+__device__ int clampY(int y) {
+    if (y < 0) return 0;
+    if (y > HEIGHT) return HEIGHT;
+    return y;
+}
 __global__ void setup_kernel(curandState* state, unsigned long seed)
 {
     int id = threadIdx.x;
     curand_init(seed, id, 0, &state[id]);
 }
-
 __global__ void update(Ant* a, curandState* globalState, int w, int h) {
     
     int idx = threadIdx.x + blockIdx.x * blockDim.x;   
     if (a[idx].getLifeSpan() > 0) {
 
-        int n = generate(globalState, idx);
-        //printf("%i\n", n);
+        int n1 = generate(globalState, idx);
+        int n2 = generate(globalState, idx);
+        printf("%i - %i\n", n1, n2);
+        
 
         Point oldp = a[idx].getPos();
 
-        a[idx].setPos(Point(oldp.getX() + n, oldp.getY() + n));
+        a[idx].setPos(Point(clampX(oldp.getX() + n1), clampY(oldp.getY() + n2)));
         a[idx].live();
     }
 }
-
-
-cudaError_t updateAnts(Colony *c) {
-
+cudaError_t updateAnts(Colony *c, Window* w) {
+    
+    win->cleanAnts();
     int size = c->getAntCount();
 
     Ant* dev_ants;
@@ -111,7 +116,6 @@ cudaError_t updateAnts(Colony *c) {
 
     update<<<1, size>>>(dev_ants, devStates, WIDTH, HEIGHT);
 
-
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();    
 
@@ -128,13 +132,12 @@ Error:
     cudaFree(dev_ants);
     cudaFree(devStates);
 
+    for (int i = 0; i < size; ++i) {
+        win->ants.push_back(new Point(c->ants[i].getPos()));
+    }
+
     return cudaStatus;
 }
-
-
-
-
-
 
 
 
@@ -335,5 +338,14 @@ Error:
 
     return cudaStatus;
 }
+
+*/
+
+
+
+/*
+Useful Links
+
+https://stackoverflow.com/questions/36274112/generate-random-number-within-cuda-kernel - Random numbers for each thread;
 
 */

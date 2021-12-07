@@ -15,9 +15,13 @@ public:
 
 	inline bool isClosed() const { return closed; }
 
+	std::vector<Point*> ants;
+
 private: 
 	bool init();
 	void createRectangle(int c);
+	inline bool validX(int x) const { if (x <= width || x >= 0) return true; return false; }
+	inline bool validY(int y) const { if (y <= height || y >= 0) return true; return false; }
 	
 private:
 	std::string title;
@@ -33,7 +37,6 @@ private:
 	Point p2;
 	int mouseClickCount = 0;
 
-	std::vector<SDL_Rect*> obstacles;
-
+	std::vector<SDL_Rect*> obstacles;	
 
 };

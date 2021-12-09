@@ -9,10 +9,13 @@
 
 #include <algorithm>
 #include <iterator>
-
-#include "Colony.h"
 #include <vector>
+
 #include "Window.h"
+#include "Colony.h"
+#include "Map.h"
+
+
 #include <stdio.h>
 #include <string> 
 #include <sstream>
@@ -40,7 +43,7 @@ int lastTime;
 
 int main()
 {
-
+    Map* m = new Map(WIDTH, HEIGHT);
     
     std::string title = "ANT SIM GPU - Ticks: ";
 

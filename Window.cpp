@@ -2,7 +2,8 @@
 
 #include <iostream>
 
-Window::Window(const std::string& title, int width, int height) : title(title), width(width), height(height)
+Window::Window(const std::string& title, int width, int height, Map* _m) 
+	: title(title), width(width), height(height), m(_m)
 {
 	closed = !init();
 }
@@ -23,6 +24,7 @@ Window::~Window()
 		delete a;
 	}
 	ants.clear();
+	delete m;
 }
 
 bool Window::init()
@@ -178,8 +180,8 @@ void Window::createRectangle(int c) {
 		(*rect).x = xUL; (*rect).y = yUL, (*rect).w = w; (*rect).h = h;
 		//(*rect).x = 200; (*rect).y = 200, (*rect).w = 100; (*rect).h = 100;
 		std::cout << "Rect: (" << xUL << ", " << yUL << ", " << w << ", " << h << ")\n";
+		fillMapWithRect(xUL, yUL, w, h, 1);
 		obstacles.push_back(rect);
-
 	}
 }
 
@@ -221,4 +223,12 @@ void Window::cleanAnts() {
 
 void Window::setTitle(const char* title) {
 	SDL_SetWindowTitle(window, title);
+}
+
+void Window::fillMapWithRect(int ULx, int ULy, int w, int h, int value) {
+	for (int i = ULx; i < w; ++i) {
+		for (int j = ULy; j < h; ++j) {
+			m->grid[i][j] = value;
+		}
+	}
 }

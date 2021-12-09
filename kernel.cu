@@ -24,6 +24,7 @@
 
 #define WIDTH 1000
 #define HEIGHT 700
+
 #define THREADSPERBLOCK 1024
 
 // ---------------------------------------------------------
@@ -34,8 +35,8 @@ Window* win;
 __device__ int generate(curandState* globalState, int ind);
 __device__ int clampX(int x);
 __device__ int clampY(int y);
-__global__ void setup_kernel(curandState* state, unsigned long seed);
-__global__ void update(Ant* a, curandState* globalState, int w, int h);
+__global__ void setup_kernel(curandState* state, unsigned long seed, int size);
+__global__ void update(Ant* a, curandState* globalState, int w, int h, int size);
 cudaError_t updateAnts(Colony *c, Window* w);
 
 int frameCount, timerFPS, lastFrame, fps;
@@ -49,7 +50,7 @@ int main()
 
     int tickCount = 0;
 
-    win = new Window("Ant Sim", WIDTH, HEIGHT);
+    win = new Window("Ant Sim", WIDTH, HEIGHT, m);
     std::ostringstream strs;
     strs << tickCount;    
     win->setTitle(title.append(strs.str()).c_str());

@@ -19,14 +19,14 @@ Map::Map(int w, int h) {
 
 Map::~Map() {
 	for (int i = 0; i < width; ++i) {
-		delete(grid[i]);
+		delete grid[i];
 	}
-	delete(grid);
+	delete grid;
 }
 
 void Map::zero() {
 	for (int i = 0; i < width; ++i) {
-		for (int j = 0; j < width; ++j) {
+		for (int j = 0; j < height; ++j) {
 			grid[i][j] = 0;
 		}
 	}
@@ -35,8 +35,9 @@ void Map::zero() {
 void Map::print() {
 	std::cout << "Map Print\n";
 	for (int i = 0; i < width; ++i) {
-		for (int j = 0; j < width; ++j) {
-			std::cout << grid[i][j] << std::endl;
+		for (int j = 0; j < height; ++j) {
+			std::cout << grid[i][j];
 		}
+		std::cout << std::endl;
 	}
 }

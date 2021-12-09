@@ -16,6 +16,9 @@
     <ClCompile Include="Colony.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
+    <ClCompile Include="Map.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -34,6 +37,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="Colony.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="Map.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

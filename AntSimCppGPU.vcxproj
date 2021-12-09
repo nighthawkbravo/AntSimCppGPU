@@ -82,6 +82,7 @@
   <ItemGroup>
     <ClCompile Include="Ant.cpp" />
     <ClCompile Include="Colony.cpp" />
+    <ClCompile Include="Map.cpp" />
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -92,6 +93,7 @@
     <ClInclude Include="Ant.h" />
     <ClInclude Include="Colony.h" />
     <ClInclude Include="direction.h" />
+    <ClInclude Include="Map.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>

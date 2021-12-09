@@ -7,12 +7,17 @@ public:
 
 	~Map();
 
-	void print();
+	
+	void print(); // Avoid printing as this clogs the console.
 
 
 public:
 	int width;
 	int height;
+
+
+	// 1 - Obstacle
+	// 2 - Food
 	int** grid;
 
 private:

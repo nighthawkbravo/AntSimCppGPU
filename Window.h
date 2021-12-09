@@ -10,14 +10,17 @@ public:
 	Window(const std::string& title, int width, int height);
 	~Window();
 
+	void cleanAnts();
 	void pollEvents();
 	void clear() const;
-
+	void setTitle(const char* title);
 	inline bool isClosed() const { return closed; }
 
-	std::vector<Point*> ants;
+	
 
-	void cleanAnts();
+public:
+	std::vector<Point*> ants;
+	bool pause = true;
 
 private: 
 	bool init();

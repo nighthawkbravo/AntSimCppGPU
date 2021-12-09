@@ -95,6 +95,10 @@ void Window::pollEvents() {
 					std::cout << "Obstacle Placer: The next two mouse clicks will place an obstacle.\n";
 					obstaclePlacing = true;
 					break;
+				case SDLK_SPACE:
+					if (pause) pause = false;
+					else pause = true;
+					break;
 				}
 				break;
 			default:
@@ -213,4 +217,8 @@ void Window::cleanAnts() {
 		delete a;
 	}
 	ants.clear();
+}
+
+void Window::setTitle(const char* title) {
+	SDL_SetWindowTitle(window, title);
 }

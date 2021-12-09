@@ -86,9 +86,6 @@ public:
 	__host__ __device__ inline direction WillIChangeDirection() {
 
 	}
-	
-private:
-	
 
 private:
 	

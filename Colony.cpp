@@ -17,7 +17,7 @@ Colony::~Colony() {
 }
 
 void Colony::addAnts(int n) {
-	if (n > 0) {
+	/*if (n > 0) {
 		int newsize = antCount + n;
 		Ant* newAnts = new Ant[newsize];
 
@@ -34,7 +34,7 @@ void Colony::addAnts(int n) {
 		delete ants;
 
 		ants = newAnts;
-	}
+	}*/
 }
 
 void Colony::setAnts(Ant* a) {
@@ -50,7 +50,7 @@ void Colony::printInfo() {
 void Colony::printAnts() {
 	for (int i = 0; i < antCount; ++i) {
 		std::cout << "LifeSpan: " << ants[i].getLifeSpan() << " - "
-			<< "Carry: " << ants[i].getLuggage() << " - "
+			<< "Carry: " << ants[i].getCarry() << " - "
 			<< "Position: " << ants[i].getPos().toString() << " - "
 			<< "Direction: " << dir2string::D2S(ants[i].getdir()) << std::endl;
 	}

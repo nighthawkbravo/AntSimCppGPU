@@ -3,6 +3,8 @@
 #include "device_launch_parameters.h"
 #include <curand.h>
 #include <curand_kernel.h>
+#include <thread>
+#include <chrono>
 
 
 #include <algorithm>
@@ -17,6 +19,7 @@
 
 #define WIDTH 1000
 #define HEIGHT 700
+#define THREADSPERBLOCK 1024
 
 // ---------------------------------------------------------
 
@@ -25,24 +28,35 @@ Window* win;
 
 __device__ int generate(curandState* globalState, int ind);
 __device__ int clampX(int x);
-__device__ int clampX(int y);
+__device__ int clampY(int y);
 __global__ void setup_kernel(curandState* state, unsigned long seed);
 __global__ void update(Ant* a, curandState* globalState, int w, int h);
 cudaError_t updateAnts(Colony *c, Window* w);
 
+int frameCount, timerFPS, lastFrame, fps;
+int lastTime;
 
 int main()
 {
     win = new Window("Ant Sim", WIDTH, HEIGHT);
-    Colony c(Point(WIDTH / 2 + 1, HEIGHT / 2 + 1), 1000, ++id);
+    Colony c(Point(WIDTH / 2 + 1, HEIGHT / 2 + 1), 2000, ++id);
     
     c.printInfo();
 
+    //updateAnts(&c, win);
+
     while (!win->isClosed()) {
+        /*lastFrame = SDL_GetTicks();
+        if (lastFrame >= (lastFrame + 1000)) {
+            lastTime = lastFrame;
+            fps = frameCount;
+            frameCount = 0;
+        }*/
+
         win->pollEvents();
         updateAnts(&c, win);
         //c.printAnts();
-        win->clear();
+        win->clear();        
     }
 
     return 0;
@@ -51,15 +65,43 @@ int main()
 
 // --------------- Ant Cuda ---------------
 
+
+__device__ Point move(direction d, Point p) {
+    switch (d) {
+    case direction::north:
+        return Point(clampX(p.getX()), clampY(p.getY()+1));
+    case direction::northeast:
+        return Point(clampX(p.getX()+1), clampY(p.getY()+1));
+    case direction::east:
+        return Point(clampX(p.getX()+1), clampY(p.getY()));
+    case direction::southeast:
+        return Point(clampX(p.getX() + 1), clampY(p.getY()-1));
+    case direction::south:
+        return Point(clampX(p.getX()), clampY(p.getY()-1));
+    case direction::southwest:
+        return Point(clampX(p.getX() - 1), clampY(p.getY() - 1));
+    case direction::west:
+        return Point(clampX(p.getX() - 1), clampY(p.getY()));
+    case direction::northwest:
+        return Point(clampX(p.getX() - 1), clampY(p.getY() + 1));
+    }
+}
 __device__ int generate(curandState* globalState, int ind)
 {
-    //int ind = threadIdx.x;
-    curandState localState = globalState[ind];
-    //float RANDOM = curand_uniform(&localState);
-    int RANDOM = curand(&localState) % 3 - 1;
+    curandState localState = globalState[ind];    
+    //int RANDOM = curand(&localState) % 3 - 1; // -1, 0, 1
+    int RANDOM = curand(&localState) % 5 - 2; // -2, -1, 0, 1, 2
     globalState[ind] = localState;
     return RANDOM;
 }
+__device__ int generate2(curandState* globalState, int ind)
+{
+    curandState localState = globalState[ind];
+    int RANDOM = curand(&localState) % 7; // [0, 6]
+    globalState[ind] = localState;
+    return RANDOM;
+}
+
 __device__ int clampX(int x) {
     if (x < 0) return 0;
     if (x > WIDTH) return WIDTH;
@@ -70,29 +112,38 @@ __device__ int clampY(int y) {
     if (y > HEIGHT) return HEIGHT;
     return y;
 }
-__global__ void setup_kernel(curandState* state, unsigned long seed)
+
+__global__ void setup_kernel(curandState* state, unsigned long seed, int size)
 {
-    int id = threadIdx.x;
+    //int id = threadIdx.x;
+    int id = threadIdx.x + blockIdx.x * blockDim.x;
+    if (id >= size) return;
     curand_init(seed, id, 0, &state[id]);
 }
-__global__ void update(Ant* a, curandState* globalState, int w, int h) {
+__global__ void update(Ant* a, curandState* globalState, int w, int h, int size) {
     
-    int idx = threadIdx.x + blockIdx.x * blockDim.x;   
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx >= size) return;
     if (a[idx].getLifeSpan() > 0) {
+        int r;
 
-        int n1 = generate(globalState, idx);
-        int n2 = generate(globalState, idx);
-        printf("%i - %i\n", n1, n2);
+        if (a[idx].getCarry()) r = a[idx].likly1;
+        else r = a[idx].likly2;
+
+        if (generate2(globalState, idx) < r) {
+            int intdir = a[idx].dir2int(a[idx].getdir()) + 8;
+            int n = generate(globalState, idx);
+
+            a[idx].setDir(a[idx].int2dir(intdir + n));
+        }
         
-
-        Point oldp = a[idx].getPos();
-
-        a[idx].setPos(Point(clampX(oldp.getX() + n1), clampY(oldp.getY() + n2)));
+        a[idx].setPos(move(a[idx].getdir(), a[idx].getPos()));        
         a[idx].live();
     }
 }
 cudaError_t updateAnts(Colony *c, Window* w) {
     
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     win->cleanAnts();
     int size = c->getAntCount();
 
@@ -112,9 +163,19 @@ cudaError_t updateAnts(Colony *c, Window* w) {
     
     srand(time(0));
     int seed = rand();
-    setup_kernel<<<1, size>>>(devStates,seed);
 
-    update<<<1, size>>>(dev_ants, devStates, WIDTH, HEIGHT);
+    int noBlocks = size / THREADSPERBLOCK + 1;
+
+    if (size <= 1024) {
+        setup_kernel<<<1, size>>>(devStates, seed, size);
+
+        update<<<1, size>>>(dev_ants, devStates, WIDTH, HEIGHT, size);
+    }
+    if (size > 1024) {
+        setup_kernel<<<noBlocks, 1024>>>(devStates, seed, size);
+
+        update<<<noBlocks, 1024>>>(dev_ants, devStates, WIDTH, HEIGHT, size);
+    }
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();    
@@ -133,7 +194,9 @@ Error:
     cudaFree(devStates);
 
     for (int i = 0; i < size; ++i) {
-        win->ants.push_back(new Point(c->ants[i].getPos()));
+        if (c->ants[i].getLifeSpan() > 0) {
+            win->ants.push_back(new Point(c->ants[i].getPos()));
+        }
     }
 
     return cudaStatus;

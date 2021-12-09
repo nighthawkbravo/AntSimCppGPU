@@ -18,7 +18,7 @@ public:
 
     void print();
 
-    inline std::string toString() {
+    __host__ __device__ inline std::string toString() {
         std::string s = "(";
         s.append(std::to_string(x));
         s.append(", ");

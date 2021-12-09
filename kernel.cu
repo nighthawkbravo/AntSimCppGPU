@@ -14,6 +14,8 @@
 #include <vector>
 #include "Window.h"
 #include <stdio.h>
+#include <string> 
+#include <sstream>
 //#include "SDL.h"
 #undef main
 
@@ -38,25 +40,53 @@ int lastTime;
 
 int main()
 {
+
+    
+    std::string title = "ANT SIM GPU - Ticks: ";
+
+    int tickCount = 0;
+
     win = new Window("Ant Sim", WIDTH, HEIGHT);
+    std::ostringstream strs;
+    strs << tickCount;    
+    win->setTitle(title.append(strs.str()).c_str());
+
+
     Colony c(Point(WIDTH / 2 + 1, HEIGHT / 2 + 1), 2000, ++id);
     
     c.printInfo();
 
-    //updateAnts(&c, win);
-
     while (!win->isClosed()) {
-        /*lastFrame = SDL_GetTicks();
-        if (lastFrame >= (lastFrame + 1000)) {
-            lastTime = lastFrame;
-            fps = frameCount;
-            frameCount = 0;
-        }*/
+        auto start = std::chrono::high_resolution_clock::now();
 
         win->pollEvents();
-        updateAnts(&c, win);
+        if (!win->pause) {
+            updateAnts(&c, win);
+            tickCount++;
+            std::this_thread::sleep_for(std::chrono::milliseconds(40));
+        }
         //c.printAnts();
-        win->clear();        
+        win->clear();
+
+        if (tickCount % 15 == 0)
+        {
+            auto stop = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+
+            double d;
+            if (duration.count() != 0) {
+                d =  (1.0 / duration.count()) * 1000;
+                //std::cout << "D: " << duration.count() << std::endl;
+            }
+            else d = 1;
+
+            std::ostringstream strs;
+            strs << d;
+            title = "ANT SIM GPU - Ticks: ";
+            win->setTitle(title.append(strs.str()).c_str());
+        }
+
+        
     }
 
     return 0;
@@ -89,8 +119,8 @@ __device__ Point move(direction d, Point p) {
 __device__ int generate(curandState* globalState, int ind)
 {
     curandState localState = globalState[ind];    
-    //int RANDOM = curand(&localState) % 3 - 1; // -1, 0, 1
-    int RANDOM = curand(&localState) % 5 - 2; // -2, -1, 0, 1, 2
+    int RANDOM = curand(&localState) % 3 - 1; // -1, 0, 1
+    //int RANDOM = curand(&localState) % 5 - 2; // -2, -1, 0, 1, 2
     globalState[ind] = localState;
     return RANDOM;
 }
@@ -98,6 +128,7 @@ __device__ int generate2(curandState* globalState, int ind)
 {
     curandState localState = globalState[ind];
     int RANDOM = curand(&localState) % 7; // [0, 6]
+    //int RANDOM = 0;
     globalState[ind] = localState;
     return RANDOM;
 }
@@ -130,9 +161,13 @@ __global__ void update(Ant* a, curandState* globalState, int w, int h, int size)
         if (a[idx].getCarry()) r = a[idx].likly1;
         else r = a[idx].likly2;
 
-        if (generate2(globalState, idx) < r) {
+        int n2 = generate2(globalState, idx);
+        //printf("ID: %i - N2 %i\n", idx+1, n2);
+        //printf("id: %i - Direction: %i - N2: %i\n", idx, a[idx].dir2int(a[idx].getdir()), n2);
+
+        if (n2 < r) {
             int intdir = a[idx].dir2int(a[idx].getdir()) + 8;
-            int n = generate(globalState, idx);
+            int n = generate(globalState, idx);           
 
             a[idx].setDir(a[idx].int2dir(intdir + n));
         }
@@ -143,7 +178,6 @@ __global__ void update(Ant* a, curandState* globalState, int w, int h, int size)
 }
 cudaError_t updateAnts(Colony *c, Window* w) {
     
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     win->cleanAnts();
     int size = c->getAntCount();
 

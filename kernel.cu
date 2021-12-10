@@ -79,28 +79,29 @@ int main()
         if (!win->pause) {
             updateAnts(&c, win);
             tickCount++;
+            if (tickCount % 15 == 0)
+            {
+                auto stop = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+
+                double d;
+                if (duration.count() != 0) {
+                    d = (1.0 / duration.count()) * 1000;
+                    //std::cout << "D: " << duration.count() << std::endl;
+                }
+                else d = 1;
+
+                std::ostringstream strs;
+                strs << d;
+                title = "ANT SIM GPU - Ticks: ";
+                win->setTitle(title.append(strs.str()).c_str());
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(40));
         }
         //c.printAnts();
         win->clear();
 
-        if (tickCount % 15 == 0)
-        {
-            auto stop = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-
-            double d;
-            if (duration.count() != 0) {
-                d =  (1.0 / duration.count()) * 1000;
-                //std::cout << "D: " << duration.count() << std::endl;
-            }
-            else d = 1;
-
-            std::ostringstream strs;
-            strs << d;
-            title = "ANT SIM GPU - Ticks: ";
-            win->setTitle(title.append(strs.str()).c_str());
-        }        
+               
     }
 
     return 0;

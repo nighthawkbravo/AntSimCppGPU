@@ -110,7 +110,7 @@ void Window::pollEvents() {
 					std::cout << "Food Placer: The next two mouse clicks will place food.\n";
 					FoodPlacing = true;
 					break;
-				case SDLK_r:
+				case SDLK_b:
 					if (BetterRender) { 
 						BetterRender = false; 
 						std::cout << "Better Render turned off.\n";

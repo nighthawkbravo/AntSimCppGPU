@@ -19,6 +19,7 @@
 #include "Window.h"
 #include "Colony.h"
 #include "Map.h"
+#include "direction.h"
 
 
 #include <stdio.h>
@@ -116,6 +117,24 @@ int main()
 
 // --------------- Ant Cuda ---------------
 
+__device__ direction goHome(Point p, Point c) {
+    int px = p.getX();
+    int py = p.getY();
+
+    int cx = c.getX();
+    int cy = c.getY();
+
+    if (py < cy && px == cx) return direction::north;
+    if (py < cy && px < cx) return direction::northeast;
+    if (py == cy && px < cx) return direction::east;
+    if (py > cy && px < cx) return direction::southeast;
+    if (py > cy && px == cx) return direction::south;
+    if (py > cy && px > cx) return direction::southwest;
+    if (py == cy && px > cx) return direction::west;
+    return direction::northwest;
+
+}
+
 __host__ __device__ int XY2UNI(int x, int y) {
     return x + y * WIDTH;
 }
@@ -124,41 +143,44 @@ __device__ Point move(direction d, Point p, int* m) {
     
     int x = p.getX();
     int y = p.getY();
-    
+
     switch (d) {
-    case direction::north:        
-        if (m[XY2UNI(clampX(x), clampY(y + 1))] != 1)            
-            return Point(clampX(x), clampY(y+1));
+    case direction::north:
+        if (m[XY2UNI(clampX(x), clampY(y + 1))] != 1)
+            return Point(clampX(x), clampY(y + 1));
         return p;
     case direction::northeast:
-        if (m[XY2UNI(clampX(x+1), clampY(y+1))] != 1)
-            return Point(clampX(x+1), clampY(y+1));
+        if (m[XY2UNI(clampX(x + 1), clampY(y + 1))] != 1)
+            return Point(clampX(x + 1), clampY(y + 1));
         return p;
     case direction::east:
-        if (m[XY2UNI(clampX(x+1), clampY(y))] != 1)
-            return Point(clampX(x+1), clampY(y));
+        if (m[XY2UNI(clampX(x + 1), clampY(y))] != 1)
+            return Point(clampX(x + 1), clampY(y));
         return p;
     case direction::southeast:
-        if (m[XY2UNI(clampX(x+1), clampY(y-1))] != 1)
-            return Point(clampX(x + 1), clampY(y-1));
+        if (m[XY2UNI(clampX(x + 1), clampY(y - 1))] != 1)
+            return Point(clampX(x + 1), clampY(y - 1));
         return p;
     case direction::south:
-        if (m[XY2UNI(clampX(x), clampY(y-1))] != 1)
-            return Point(clampX(x), clampY(y-1));
+        if (m[XY2UNI(clampX(x), clampY(y - 1))] != 1)
+            return Point(clampX(x), clampY(y - 1));
         return p;
     case direction::southwest:
-        if (m[XY2UNI(clampX(x-1), clampY(y-1))] != 1)
+        if (m[XY2UNI(clampX(x - 1), clampY(y - 1))] != 1)
             return Point(clampX(x - 1), clampY(y - 1));
         return p;
     case direction::west:
-        if (m[XY2UNI(clampX(x-1), clampY(y))] != 1)
+        if (m[XY2UNI(clampX(x - 1), clampY(y))] != 1)
             return Point(clampX(x - 1), clampY(y));
         return p;
     case direction::northwest:
-        if (m[XY2UNI(clampX(x-1), clampY(y+1))] != 1)
+        if (m[XY2UNI(clampX(x - 1), clampY(y + 1))] != 1)
             return Point(clampX(x - 1), clampY(y + 1));
         return p;
     }
+    
+    
+    
 }
 __device__ int generate(curandState* globalState, int ind)
 {
@@ -209,8 +231,6 @@ __global__ void update(Ant* a, curandState* globalState, int* dev_map, int w, in
         else r = a[idx].likly2;
 
         int n2 = generate2(globalState, idx);
-        //printf("ID: %i - N2 %i\n", idx+1, n2);
-        //printf("id: %i - Direction: %i - N2: %i\n", idx, a[idx].dir2int(a[idx].getdir()), n2);
 
         if (n2 < r) {
             int intdir = a[idx].dir2int(a[idx].getdir()) + 8;
@@ -218,6 +238,8 @@ __global__ void update(Ant* a, curandState* globalState, int* dev_map, int w, in
 
             a[idx].setDir(a[idx].int2dir(intdir + n));
         }
+
+        if (a[idx].getCarry()) a[idx].setDir(goHome(a[idx].getPos(), a[idx].getColPos()));
         
         a[idx].setPos(move(a[idx].getdir(), a[idx].getPos(), dev_map));
         a[idx].live();

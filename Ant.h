@@ -28,8 +28,8 @@ public:
 	__host__ __device__ inline void setDir(direction d) {
 		dir = d;
 	}
-	__host__ __device__ inline void setFood() {
-		CarryingFood = true;
+	__host__ __device__ inline void setFood(bool t) {
+		CarryingFood = t;
 	}
 	__host__ __device__ inline void live() {
 		lifeSpan--;
@@ -38,6 +38,7 @@ public:
 	__host__ __device__ inline direction getdir() { return dir; }
 	__host__ __device__ inline bool getCarry() { return CarryingFood; }
 	__host__ __device__ inline Point getPos() { return pos; }
+	__host__ __device__ inline Point getColPos() { return colPos; }
 	__host__ __device__ inline int getLifeSpan() { return lifeSpan; }
 
 	__host__ __device__ inline direction int2dir(int i) {

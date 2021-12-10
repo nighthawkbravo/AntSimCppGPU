@@ -285,5 +285,4 @@ void Window::fillMapWithRect(int ULx, int ULy, int w, int h, int value) {
 			m->grid[i][j] = value;
 
 	m->equalizeUniGrid();
-	m->print();
 }

@@ -33,4 +33,9 @@ public:
 
     __host__ __device__ void setX(int X) { x = X; }
     __host__ __device__ void setY(int Y) { y = Y; }
+
+    __host__ __device__ inline bool operator ==(const Point& p1) {
+        if (this->x == p1.x && this->y == p1.y) return true;
+        return false;
+    }
 };

@@ -192,19 +192,12 @@ __global__ void setup_kernel(curandState* state, unsigned long seed, int size)
 __global__ void update(Ant* a, curandState* globalState, int* dev_map, int w, int h, int size) {
     
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx >= size) return;/*
-
-    for (int i = 0; i < h; ++i) {
-        for (int j = 0; j < w; ++j) {
-            printf("%i", dev_map[j + i * h]);
-        }
-        printf("\n");
-    }*/
-
-
-
+    if (idx >= size) return;
     if (a[idx].getLifeSpan() > 0) {
         int r;
+
+        if (dev_map[XY2UNI(a[idx].getPos().getX(), a[idx].getPos().getY())] == 2 && !a[idx].getCarry()) a[idx].setFood(1);
+        if (a[idx].getCarry() && a[idx].getPos() == a[idx].getColPos()) a[idx].setFood(0);
 
         if (a[idx].getCarry()) r = a[idx].likly1;
         else r = a[idx].likly2;

@@ -28,6 +28,6 @@ private:
 
 	int myId;
 	int antCount;
-	Point startingPos;
+	Point startingPos;	
 
 };

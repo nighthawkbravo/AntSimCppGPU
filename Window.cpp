@@ -65,7 +65,11 @@ bool Window::init()
 	SDL_DestroyWindow(window);
 	SDL_Quit();*/
 
-	SDL_CreateWindowAndRenderer(width, height, 0, &window, &renderer);	
+	//SDL_CreateWindowAndRenderer(width, height, 0, &window, &renderer);	
+	//SDL_SetWindowSize(&window, int width, int height);
+	window = SDL_CreateWindow("", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, 0);
+	SDL_SetWindowSize(window, width, height);
+	renderer = SDL_CreateRenderer(window, -1, 0);
 
 	if (window == nullptr) {
 		std::cerr << "Failed to create window.\n";
@@ -149,6 +153,8 @@ void Window::createRectangle(int c) {
 	int p2X = p2.getX();
 	int p2Y = p2.getY();
 
+	std::cout << "(" << p1X << ", " << p1Y << ") - (" << p2X << ", " << p2Y << ")\n";
+
 	if (p1X < p2X && p1Y < p2Y) {
 		xUL = p1X;
 		yUL = p1Y;
@@ -177,9 +183,8 @@ void Window::createRectangle(int c) {
 	switch (c) {
 	case 1: // Obstacle
 		SDL_Rect* rect = new SDL_Rect;
-		(*rect).x = xUL; (*rect).y = yUL, (*rect).w = w; (*rect).h = h;
+		rect->x = xUL; rect->y = yUL, rect->w = w; rect->h = h;
 		//(*rect).x = 200; (*rect).y = 200, (*rect).w = 100; (*rect).h = 100;
-		std::cout << "Rect: (" << xUL << ", " << yUL << ", " << w << ", " << h << ")\n";
 		fillMapWithRect(xUL, yUL, w, h, 1);
 		obstacles.push_back(rect);
 	}
@@ -207,6 +212,7 @@ void Window::clear() const {
 			if(validX(x-1) && validY(y)) SDL_RenderDrawPoint(renderer, x-1, y);
 			if (validX(x) && validY(y - 1)) SDL_RenderDrawPoint(renderer, x, y - 1);
 			if (validX(x) && validY(y + 1)) SDL_RenderDrawPoint(renderer, x, y + 1);
+
 		}
 	}
 
@@ -226,9 +232,9 @@ void Window::setTitle(const char* title) {
 }
 
 void Window::fillMapWithRect(int ULx, int ULy, int w, int h, int value) {
-	for (int i = ULx; i < w; ++i) {
-		for (int j = ULy; j < h; ++j) {
+	for (int i = ULy; i < ULy+h; ++i)
+		for (int j = ULx; j < ULx+w; ++j)
 			m->grid[i][j] = value;
-		}
-	}
+
+	m->equalizeUniGrid();
 }

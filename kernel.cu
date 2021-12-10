@@ -22,12 +22,24 @@
 //#include "SDL.h"
 #undef main
 
+
 #define WIDTH 1000
 #define HEIGHT 700
+
+
+
 
 #define THREADSPERBLOCK 1024
 
 // ---------------------------------------------------------
+
+int startX = WIDTH / 2 + 1;
+int startY = HEIGHT / 2 + 1;
+
+int numOfAnts = 100;
+
+//int startX = 100;
+//int startY = 100;
 
 int id = 0;
 Window* win;
@@ -36,7 +48,7 @@ __device__ int generate(curandState* globalState, int ind);
 __device__ int clampX(int x);
 __device__ int clampY(int y);
 __global__ void setup_kernel(curandState* state, unsigned long seed, int size);
-__global__ void update(Ant* a, curandState* globalState, int w, int h, int size);
+__global__ void update(Ant* a, curandState* globalState, int* dev_map, int w, int h, int size);
 cudaError_t updateAnts(Colony *c, Window* w);
 
 int frameCount, timerFPS, lastFrame, fps;
@@ -56,7 +68,7 @@ int main()
     win->setTitle(title.append(strs.str()).c_str());
 
 
-    Colony c(Point(WIDTH / 2 + 1, HEIGHT / 2 + 1), 2000, ++id);
+    Colony c(Point(startX, startY), numOfAnts, ++id);
     
     c.printInfo();
 
@@ -88,9 +100,7 @@ int main()
             strs << d;
             title = "ANT SIM GPU - Ticks: ";
             win->setTitle(title.append(strs.str()).c_str());
-        }
-
-        
+        }        
     }
 
     return 0;
@@ -99,25 +109,48 @@ int main()
 
 // --------------- Ant Cuda ---------------
 
+__device__ int XY2UNI(int x, int y) {
+    return x + y * WIDTH;
+}
 
-__device__ Point move(direction d, Point p) {
+__device__ Point move(direction d, Point p, int* m) {
+    
+    int x = p.getX();
+    int y = p.getY();
+    
     switch (d) {
-    case direction::north:
-        return Point(clampX(p.getX()), clampY(p.getY()+1));
+    case direction::north:        
+        if (m[XY2UNI(clampX(x), clampY(y + 1))] != 1)            
+            return Point(clampX(x), clampY(y+1));
+        return p;
     case direction::northeast:
-        return Point(clampX(p.getX()+1), clampY(p.getY()+1));
+        if (m[XY2UNI(clampX(x+1), clampY(y+1))] != 1)
+            return Point(clampX(x+1), clampY(y+1));
+        return p;
     case direction::east:
-        return Point(clampX(p.getX()+1), clampY(p.getY()));
+        if (m[XY2UNI(clampX(x+1), clampY(y))] != 1)
+            return Point(clampX(x+1), clampY(y));
+        return p;
     case direction::southeast:
-        return Point(clampX(p.getX() + 1), clampY(p.getY()-1));
+        if (m[XY2UNI(clampX(x+1), clampY(y-1))] != 1)
+            return Point(clampX(x + 1), clampY(y-1));
+        return p;
     case direction::south:
-        return Point(clampX(p.getX()), clampY(p.getY()-1));
+        if (m[XY2UNI(clampX(x), clampY(y-1))] != 1)
+            return Point(clampX(x), clampY(y-1));
+        return p;
     case direction::southwest:
-        return Point(clampX(p.getX() - 1), clampY(p.getY() - 1));
+        if (m[XY2UNI(clampX(x-1), clampY(y-1))] != 1)
+            return Point(clampX(x - 1), clampY(y - 1));
+        return p;
     case direction::west:
-        return Point(clampX(p.getX() - 1), clampY(p.getY()));
+        if (m[XY2UNI(clampX(x-1), clampY(y))] != 1)
+            return Point(clampX(x - 1), clampY(y));
+        return p;
     case direction::northwest:
-        return Point(clampX(p.getX() - 1), clampY(p.getY() + 1));
+        if (m[XY2UNI(clampX(x-1), clampY(y+1))] != 1)
+            return Point(clampX(x - 1), clampY(y + 1));
+        return p;
     }
 }
 __device__ int generate(curandState* globalState, int ind)
@@ -155,10 +188,20 @@ __global__ void setup_kernel(curandState* state, unsigned long seed, int size)
     if (id >= size) return;
     curand_init(seed, id, 0, &state[id]);
 }
-__global__ void update(Ant* a, curandState* globalState, int w, int h, int size) {
+__global__ void update(Ant* a, curandState* globalState, int* dev_map, int w, int h, int size) {
     
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx >= size) return;
+    if (idx >= size) return;/*
+
+    for (int i = 0; i < h; ++i) {
+        for (int j = 0; j < w; ++j) {
+            printf("%i", dev_map[j + i * h]);
+        }
+        printf("\n");
+    }*/
+
+
+
     if (a[idx].getLifeSpan() > 0) {
         int r;
 
@@ -176,17 +219,19 @@ __global__ void update(Ant* a, curandState* globalState, int w, int h, int size)
             a[idx].setDir(a[idx].int2dir(intdir + n));
         }
         
-        a[idx].setPos(move(a[idx].getdir(), a[idx].getPos()));        
+        a[idx].setPos(move(a[idx].getdir(), a[idx].getPos(), dev_map));
         a[idx].live();
     }
 }
 cudaError_t updateAnts(Colony *c, Window* w) {
     
-    win->cleanAnts();
+    w->cleanAnts();
     int size = c->getAntCount();
 
     Ant* dev_ants;
+    int* dev_uniGrid;
     curandState* devStates;
+
     cudaError_t cudaStatus;
 
     // Choose which GPU to run on, change this on a multi-GPU system.
@@ -195,9 +240,13 @@ cudaError_t updateAnts(Colony *c, Window* w) {
     // Allocate GPU buffers for the ants vector
     cudaStatus = cudaMalloc((void**)&dev_ants, size * sizeof(Ant));
     cudaStatus = cudaMalloc(&devStates, size * sizeof(curandState));    
+    cudaStatus = cudaMalloc((void**)&dev_uniGrid, w->m->uniSize * sizeof(int));
+
+
 
     // Copy input vector from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_ants, c->ants, size * sizeof(Ant), cudaMemcpyHostToDevice);    
+    cudaStatus = cudaMemcpy(dev_ants, c->ants, size * sizeof(Ant), cudaMemcpyHostToDevice); 
+    cudaStatus = cudaMemcpy(dev_uniGrid, w->m->uniGrid, w->m->uniSize * sizeof(int), cudaMemcpyHostToDevice);
     
     srand(time(0));
     int seed = rand();
@@ -207,12 +256,12 @@ cudaError_t updateAnts(Colony *c, Window* w) {
     if (size <= 1024) {
         setup_kernel<<<1, size>>>(devStates, seed, size);
 
-        update<<<1, size>>>(dev_ants, devStates, WIDTH, HEIGHT, size);
+        update<<<1, size>>>(dev_ants, devStates, dev_uniGrid, WIDTH, HEIGHT, size);
     }
     if (size > 1024) {
         setup_kernel<<<noBlocks, 1024>>>(devStates, seed, size);
 
-        update<<<noBlocks, 1024>>>(dev_ants, devStates, WIDTH, HEIGHT, size);
+        update<<<noBlocks, 1024>>>(dev_ants, devStates, dev_uniGrid, WIDTH, HEIGHT, size);
     }
 
     // Check for any errors launching the kernel
@@ -225,17 +274,21 @@ cudaError_t updateAnts(Colony *c, Window* w) {
 
     // Copy output vector from GPU buffer to host memory.
     cudaStatus = cudaMemcpy(c->ants, dev_ants, size * sizeof(Ant), cudaMemcpyDeviceToHost);
-    
+    cudaStatus = cudaMemcpy(w->m->uniGrid, dev_uniGrid, w->m->uniSize * sizeof(int), cudaMemcpyDeviceToHost); // For perhaps later
 
+    
 Error:
     cudaFree(dev_ants);
     cudaFree(devStates);
+    cudaFree(dev_uniGrid);
 
     for (int i = 0; i < size; ++i) {
         if (c->ants[i].getLifeSpan() > 0) {
-            win->ants.push_back(new Point(c->ants[i].getPos()));
+            w->ants.push_back(new Point(c->ants[i].getPos()));
         }
     }
+
+
 
     return cudaStatus;
 }

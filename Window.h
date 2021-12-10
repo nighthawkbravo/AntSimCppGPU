@@ -21,6 +21,7 @@ public:
 public:
 	std::vector<Point*> ants;
 	bool pause = true;
+	Map* m;
 
 private: 
 	bool init();
@@ -32,7 +33,7 @@ private:
 private:
 	std::string title;
 	int width, height;
-	Map* m;
+	
 
 	bool closed = false;
 	SDL_Window* window = nullptr;

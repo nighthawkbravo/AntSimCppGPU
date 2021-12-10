@@ -23,8 +23,8 @@
 #undef main
 
 
-#define WIDTH 1000
-#define HEIGHT 700
+#define WIDTH 2500
+#define HEIGHT 1000
 
 
 
@@ -36,7 +36,7 @@
 int startX = WIDTH / 2 + 1;
 int startY = HEIGHT / 2 + 1;
 
-int numOfAnts = 100;
+int numOfAnts = 10000;
 
 //int startX = 100;
 //int startY = 100;
@@ -76,6 +76,7 @@ int main()
         auto start = std::chrono::high_resolution_clock::now();
 
         win->pollEvents();
+        win->clear();
         if (!win->pause) {
             updateAnts(&c, win);
             tickCount++;
@@ -99,7 +100,7 @@ int main()
             std::this_thread::sleep_for(std::chrono::milliseconds(40));
         }
         //c.printAnts();
-        win->clear();
+        
 
                
     }
@@ -110,7 +111,7 @@ int main()
 
 // --------------- Ant Cuda ---------------
 
-__device__ int XY2UNI(int x, int y) {
+__host__ __device__ int XY2UNI(int x, int y) {
     return x + y * WIDTH;
 }
 

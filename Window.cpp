@@ -19,6 +19,11 @@ Window::~Window()
 		delete r;
 	}
 	obstacles.clear();
+	for (auto r : foods)
+	{
+		delete r;
+	}
+	foods.clear();
 	for (auto a : ants)
 	{
 		delete a;
@@ -90,7 +95,7 @@ void Window::pollEvents() {
 	int x = 0, y = 0;
 
 	if (SDL_PollEvent(&event)) {
-		if (!obstaclePlacing) {
+		if (!obstaclePlacing && !FoodPlacing) {
 			switch (event.type) {
 			case SDL_QUIT:
 				closed = true;
@@ -100,6 +105,10 @@ void Window::pollEvents() {
 				case SDLK_1:
 					std::cout << "Obstacle Placer: The next two mouse clicks will place an obstacle.\n";
 					obstaclePlacing = true;
+					break;
+				case SDLK_2:
+					std::cout << "Food Placer: The next two mouse clicks will place food.\n";
+					FoodPlacing = true;
 					break;
 				case SDLK_SPACE:
 					if (pause) pause = false;
@@ -111,7 +120,7 @@ void Window::pollEvents() {
 				break;
 			}
 		}
-		else {
+		else if(obstaclePlacing) {
 			switch (event.type) {
 			case SDL_QUIT:
 				closed = true;
@@ -134,7 +143,34 @@ void Window::pollEvents() {
 					createRectangle(1);
 					obstaclePlacing = false;
 				}
-				
+				break;
+			default:
+				break;
+			}
+		}
+		else if (FoodPlacing) {
+			switch (event.type) {
+			case SDL_QUIT:
+				closed = true;
+				break;
+			case SDL_MOUSEMOTION:
+				if (mouseClickCount == 1) {
+					p2.setX(event.motion.x); p2.setY(event.motion.y);
+				}
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+				SDL_GetMouseState(&x, &y);
+				if (mouseClickCount == 0) {
+					mouseClickCount++;
+
+					p1.setX(x); p1.setY(y);
+				}
+				else if (mouseClickCount == 1) {
+					mouseClickCount = 0;
+					p2.setX(x); p2.setY(y);
+					createRectangle(2);
+					FoodPlacing = false;
+				}
 				break;
 			default:
 				break;
@@ -180,13 +216,18 @@ void Window::createRectangle(int c) {
 		h = p2Y - p1Y;
 	}
 	
+	SDL_Rect* rect = new SDL_Rect;
 	switch (c) {
 	case 1: // Obstacle
-		SDL_Rect* rect = new SDL_Rect;
 		rect->x = xUL; rect->y = yUL, rect->w = w; rect->h = h;
-		//(*rect).x = 200; (*rect).y = 200, (*rect).w = 100; (*rect).h = 100;
 		fillMapWithRect(xUL, yUL, w, h, 1);
 		obstacles.push_back(rect);
+		break;
+	case 2: // Food
+		rect->x = xUL; rect->y = yUL, rect->w = w; rect->h = h;
+		fillMapWithRect(xUL, yUL, w, h, 2);
+		foods.push_back(rect);
+		break;
 	}
 }
 
@@ -197,6 +238,13 @@ void Window::clear() const {
 	if (obstacles.size() > 0) {
 		SDL_SetRenderDrawColor(renderer, 165, 42, 42, 255);
 		for (auto i = obstacles.begin(); i < obstacles.end(); ++i) {
+			SDL_RenderFillRect(renderer, *i);
+		}
+	}
+
+	if (foods.size() > 0) {
+		SDL_SetRenderDrawColor(renderer, 0, 120, 0, 255);
+		for (auto i = foods.begin(); i < foods.end(); ++i) {
 			SDL_RenderFillRect(renderer, *i);
 		}
 	}
@@ -237,4 +285,5 @@ void Window::fillMapWithRect(int ULx, int ULy, int w, int h, int value) {
 			m->grid[i][j] = value;
 
 	m->equalizeUniGrid();
+	m->print();
 }

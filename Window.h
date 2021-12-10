@@ -40,11 +40,13 @@ private:
 	SDL_Renderer* renderer = nullptr;
 	
 	bool obstaclePlacing = false;
+	bool FoodPlacing = false;
 
 	Point p1;
 	Point p2;
 	int mouseClickCount = 0;
 
-	std::vector<SDL_Rect*> obstacles;	
+	std::vector<SDL_Rect*> obstacles;
+	std::vector<SDL_Rect*> foods;
 
 };

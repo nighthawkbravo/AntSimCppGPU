@@ -3,6 +3,11 @@
 #include "device_launch_parameters.h"
 #include <curand.h>
 #include <curand_kernel.h>
+
+#include <thrust/sort.h>
+#include <thrust/functional.h>
+#include <thrust/execution_policy.h>
+
 #include <thread>
 #include <chrono>
 
@@ -23,8 +28,8 @@
 #undef main
 
 
-#define WIDTH 2500
-#define HEIGHT 1000
+#define WIDTH 1500
+#define HEIGHT 700
 
 
 
@@ -277,13 +282,26 @@ Error:
     cudaFree(devStates);
     cudaFree(dev_uniGrid);
 
+
+    int* keys = new int[size];
+    Point* values = new Point[size];
+
     for (int i = 0; i < size; ++i) {
         if (c->ants[i].getLifeSpan() > 0) {
             w->ants.push_back(new Point(c->ants[i].getPos()));
+
+            keys[i] = XY2UNI(c->ants[i].getPos().getX(), c->ants[i].getPos().getY());
+            values[i] = c->ants[i].getPos();
         }
     }
+    
+    
+    thrust::stable_sort_by_key(keys, keys + size, values);
 
+    std::vector<Point> points(values, values + size);
 
+    points.erase(std::unique(points.begin(), points.begin()+size));
+    w->uniqueAnts = points;
 
     return cudaStatus;
 }

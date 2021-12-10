@@ -20,6 +20,7 @@ public:
 
 public:
 	std::vector<Point*> ants;
+	std::vector<Point> uniqueAnts;
 	bool pause = true;
 	Map* m;
 
@@ -41,6 +42,7 @@ private:
 	
 	bool obstaclePlacing = false;
 	bool FoodPlacing = false;
+	bool BetterRender = true;
 
 	Point p1;
 	Point p2;

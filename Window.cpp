@@ -110,6 +110,17 @@ void Window::pollEvents() {
 					std::cout << "Food Placer: The next two mouse clicks will place food.\n";
 					FoodPlacing = true;
 					break;
+				case SDLK_r:
+					if (BetterRender) { 
+						BetterRender = false; 
+						std::cout << "Better Render turned off.\n";
+					}
+					else {
+						BetterRender = true;
+						std::cout << "Better Render turned on.\n";
+					}
+					
+					break;
 				case SDLK_SPACE:
 					if (pause) pause = false;
 					else pause = true;
@@ -251,17 +262,34 @@ void Window::clear() const {
 
 	if (ants.size() > 0) {
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-		for (auto i = ants.begin(); i < ants.end(); ++i) {
-			int x = (*i)->getX();
-			int y = (*i)->getY();
+		if (BetterRender) {
+			for (auto i : uniqueAnts)
+			{
+				int x = i.getX();
+				int y = i.getY();
 
-			SDL_RenderDrawPoint(renderer, x, y);
-			if(validX(x+1) && validY(y)) SDL_RenderDrawPoint(renderer, x+1, y);
-			if(validX(x-1) && validY(y)) SDL_RenderDrawPoint(renderer, x-1, y);
-			if (validX(x) && validY(y - 1)) SDL_RenderDrawPoint(renderer, x, y - 1);
-			if (validX(x) && validY(y + 1)) SDL_RenderDrawPoint(renderer, x, y + 1);
-
+				SDL_RenderDrawPoint(renderer, x, y);
+				if (validX(x + 1) && validY(y)) SDL_RenderDrawPoint(renderer, x + 1, y);
+				if (validX(x - 1) && validY(y)) SDL_RenderDrawPoint(renderer, x - 1, y);
+				if (validX(x) && validY(y - 1)) SDL_RenderDrawPoint(renderer, x, y - 1);
+				if (validX(x) && validY(y + 1)) SDL_RenderDrawPoint(renderer, x, y + 1);
+			}
 		}
+		else {
+			for (auto i = ants.begin(); i < ants.end(); ++i) {
+				int x = (*i)->getX();
+				int y = (*i)->getY();
+
+				SDL_RenderDrawPoint(renderer, x, y);
+				if (validX(x + 1) && validY(y)) SDL_RenderDrawPoint(renderer, x + 1, y);
+				if (validX(x - 1) && validY(y)) SDL_RenderDrawPoint(renderer, x - 1, y);
+				if (validX(x) && validY(y - 1)) SDL_RenderDrawPoint(renderer, x, y - 1);
+				if (validX(x) && validY(y + 1)) SDL_RenderDrawPoint(renderer, x, y + 1);
+
+			}
+		}
+
+
 	}
 
 	SDL_RenderPresent(renderer);
@@ -286,3 +314,4 @@ void Window::fillMapWithRect(int ULx, int ULy, int w, int h, int value) {
 
 	m->equalizeUniGrid();
 }
+

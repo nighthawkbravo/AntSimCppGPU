@@ -318,12 +318,16 @@ Error:
     }
     
     
+    
     thrust::stable_sort_by_key(keys, keys + size, values);
 
     std::vector<Point> points(values, values + size);
 
     points.erase(std::unique(points.begin(), points.begin()+size));
     w->uniqueAnts = points;
+
+    delete keys;
+    delete values;
 
     return cudaStatus;
 }
